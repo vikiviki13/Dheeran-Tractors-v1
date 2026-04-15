@@ -1,4 +1,4 @@
-  <script>
+  
     /* ===================== APP STATE ===================== */
     const state = {
       currentScreen: 'splash',
@@ -21,14 +21,13 @@
         darkMode: false,
         notifications: true,
         autoSave: true
-      },
-      currentFormExtras: []
+      }
     };
 
     /* ===================== SUPABASE CONFIG ===================== */
     const SUPABASE_URL = 'YOUR_SUPABASE_URL';
     const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
-    const supabase = (SUPABASE_URL !== 'YOUR_SUPABASE_URL') ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+    const supabaseClient = (SUPABASE_URL !== 'YOUR_SUPABASE_URL') ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
     /* ===================== MODELS MAP ===================== */
     // No longer needed after switching to text inputs
@@ -36,9 +35,9 @@
     /* ===================== INIT ===================== */
     window.addEventListener('load', async () => {
       // Load listings from Supabase
-      if (supabase) {
+      if (supabaseClient) {
         try {
-          const { data, error } = await supabase.from('listings').select('*').order('createdAt', { ascending: false });
+          const { data, error } = await supabaseClient.from('listings').select('*').order('createdAt', { ascending: false });
           if (error) throw error;
           state.listings = data || [];
         } catch (err) {
@@ -69,9 +68,9 @@
     });
 
     async function saveListingToDB(listing) {
-      if (!supabase) return;
+      if (!supabaseClient) return;
       try {
-        const { error } = await supabase.from('listings').upsert(listing);
+        const { error } = await supabaseClient.from('listings').upsert(listing);
         if (error) throw error;
       } catch (err) {
         console.error('Supabase save error:', err);
@@ -329,9 +328,6 @@
       document.getElementById('f-status').value = 'available';
       document.getElementById('f-contact').value = state.settings.phone.replace('+91 ', '');
       document.getElementById('f-gear').value = '';
-      document.getElementById('f-steering').value = '';
-      document.getElementById('f-brake').value = '';
-      document.getElementById('f-clutch').value = '';
       document.getElementById('f-bookType').value = '';
       state.currentFormExtras = [];
       renderExtrasChips();
@@ -375,7 +371,7 @@
 
       const requiredFields = [
         'f-brand', 'f-model', 'f-year', 'f-hp', 'f-location',
-        'f-gear', 'f-steering', 'f-brake', 'f-clutch',
+        'f-gear',
         'f-condition', 'f-engine-cond', 'f-tyre-cond', 'f-condition-notes',
         'f-reg', 'f-bookType', 'f-loan', 'f-insurance', 'f-status',
         'f-price', 'f-comm-type', 'f-commission', 'f-contact', 'f-desc'
@@ -447,9 +443,6 @@
         tyreCond: parseInt(document.getElementById('f-tyre-cond').value),
         condNotes: document.getElementById('f-condition-notes').value,
         gear: document.getElementById('f-gear').value || '—',
-        steering: document.getElementById('f-steering').value || '—',
-        brake: document.getElementById('f-brake').value || '—',
-        clutch: document.getElementById('f-clutch').value || '—',
         extras,
         reg: document.getElementById('f-reg').value || '—',
         bookType,
@@ -651,9 +644,6 @@
       document.getElementById('detailSpecs').innerHTML = `
     <div class="spec-card"><div class="spec-emoji">⚡</div><div class="spec-val">${l.hp}</div><div class="spec-key">Power</div></div>
     <div class="spec-card"><div class="spec-emoji">⚙️</div><div class="spec-val">${l.gear}</div><div class="spec-key">Gearbox</div></div>
-    <div class="spec-card"><div class="spec-emoji">🔧</div><div class="spec-val">${l.clutch}</div><div class="spec-key">Clutch</div></div>
-    <div class="spec-card"><div class="spec-emoji">🏎️</div><div class="spec-val">${l.steering}</div><div class="spec-key">Steering</div></div>
-    <div class="spec-card"><div class="spec-emoji">🛑</div><div class="spec-val">${l.brake}</div><div class="spec-key">Brake</div></div>
     <div class="spec-card"><div class="spec-emoji">🔋</div><div class="spec-val">${l.condition}%</div><div class="spec-key">Condition</div></div>`;
       const props = [
         ['Registration', l.reg], ['Book Type', l.bookType], ['Loan Status', l.loan], ['Insurance', l.insurance],
@@ -682,9 +672,9 @@
       const idToDelete = state.currentDetailId;
       state.listings = state.listings.filter(l => l.id !== idToDelete);
       
-      if (supabase) {
+      if (supabaseClient) {
         try {
-          const { error } = await supabase.from('listings').delete().eq('id', idToDelete);
+          const { error } = await supabaseClient.from('listings').delete().eq('id', idToDelete);
           if (error) throw error;
         } catch (err) {
           console.error('Supabase delete error:', err);
@@ -720,9 +710,6 @@
       document.getElementById('f-status').value = l.status;
       document.getElementById('f-condition').value = l.condition || '';
       document.getElementById('f-gear').value = l.gear || '';
-      document.getElementById('f-steering').value = l.steering || '';
-      document.getElementById('f-brake').value = l.brake || '';
-      document.getElementById('f-clutch').value = l.clutch || '';
       document.getElementById('f-bookType').value = l.bookType || '';
 
       // Set engine and tyre condition to some generic value or leave empty if not saved
@@ -767,9 +754,6 @@
 📅 Year: ${l.year}
 ⚡ Power: ${l.hp}
 ⚙️ Gear: ${l.gear}
-🏎️ Steering: ${l.steering}
-🛑 Brake: ${l.brake}
-🔧 Clutch: ${l.clutch}
 🔋 Condition: ${l.condition}%
 📍 Location: ${l.location}
 📖 Book Type: ${l.bookType}
@@ -1080,4 +1064,3 @@ ${extras ? '✨ Extras: ' + extras + '\n' : ''}
       }
       initSharingLink();
     });
-  </script>
